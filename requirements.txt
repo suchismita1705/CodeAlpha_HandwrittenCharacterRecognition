@@ -8,3 +8,5 @@ opencv-python
 scikit-learn
 streamlit
 pyspellchecker
+torch
+transformers

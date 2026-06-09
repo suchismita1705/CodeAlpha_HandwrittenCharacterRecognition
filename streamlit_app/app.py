@@ -11,7 +11,7 @@ from streamlit_drawable_canvas import st_canvas
 from spellchecker import SpellChecker
 from transformers import TrOCRProcessor, VisionEncoderDecoderModel
 
-# 1. ADVANCED CYBER-DARK MODE LAYOUT & CSS INJECTIONS
+# 1. ADVANCED CYBER-DARK MODE LAYOUT & CSS INJECTIONS (Renders Instantly)
 st.set_page_config(page_title="AI Word Workstation (Pro)", page_icon="🧠", layout="centered")
 
 st.markdown("""
@@ -90,7 +90,6 @@ st.markdown("""
         font-weight: 500;
     }
     
-    /* Target Streamlit native metric wrappers to match dark aesthetics */
     [data-testid="stMetricValue"] {
         font-family: 'JetBrains Mono', monospace !important;
         color: #10B981 !important;
@@ -108,28 +107,24 @@ st.markdown("""
 st.markdown('<div class="main-title">AI Word Workstation</div>', unsafe_allow_html=True)
 st.markdown('<div class="subtitle">Advanced Dual-Input Dual-Engine Deep Learning Suite</div>', unsafe_allow_html=True)
 
-# 2. RUNTIME RESOURCE CACHE LOADERS
+# 2. CACHED MODEL RESOURCE FUNCTIONS (Only triggered when needed)
 @st.cache_resource
-def load_cnn_brain():
+def get_cnn_model():
     model_path = os.path.join("saved_models", "best_handwritten_model.keras")
     if os.path.exists(model_path):
         return tf.keras.models.load_model(model_path)
     return None
 
 @st.cache_resource
-def load_trocr_brain():
+def get_trocr_model():
     model_name = "microsoft/trocr-base-handwritten"
     processor = TrOCRProcessor.from_pretrained(model_name)
     model = VisionEncoderDecoderModel.from_pretrained(model_name)
     return processor, model
 
-cnn_model = load_cnn_brain()
+# Setup dictionary context configurations
 spell = SpellChecker()
-
-# Load baseline testing words into corpus memory paths
 spell.word_frequency.load_words(["HELLO", "NAME", "CODE", "CAT", "DOG", "AI", "HOME", "ALPHA"])
-
-# FIXED DICTIONARY ASSIGNMENT: Explicitly override the dictionary map value to patch the AttributeError
 spell.word_frequency.dictionary["hello"] = 999999999
 
 CLASS_MAPPING = [
@@ -178,19 +173,21 @@ else:
         if np.mean(img_gray) > 127:
             img_gray = cv2.bitwise_not(img_gray)
 
-# 5. INTEGRATED INFERENCE EXECUTIONS WITH LATENCY PROFILING
+# 5. INTEGRATED INFERENCE EXECUTIONS WITH LAZY LOADING PROFILING
 if img_gray is not None:
     st.write("")
     if st.button(f"⚡ Compute {selected_engine} Inference", use_container_width=True):
         
         # --- EXECUTION ENGINE 1: SEGMENTED CNN + NLP ---
         if selected_engine == "🧠 Custom CNN + NLP Segmenter":
-            if cnn_model is None:
-                st.error("❌ Error: CNN model weights missing from local workspace.")
-            else:
-                start_time = time.perf_counter()
+            start_time = time.perf_counter()
+            
+            with st.spinner("Lazy loading CNN parameters and running contour slicing..."):
+                cnn_model = get_cnn_model()
                 
-                with st.spinner("Isolating character contours and optimizing matrices..."):
+                if cnn_model is None:
+                    st.error("❌ Error: CNN model weights missing from local workspace.")
+                else:
                     contours, _ = cv2.findContours(img_gray, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
                     bounding_boxes = sorted([cv2.boundingRect(c) for c in contours if cv2.boundingRect(c)[2] > 3], key=lambda b: b[0])
                     
@@ -258,7 +255,7 @@ if img_gray is not None:
             start_time = time.perf_counter()
             
             with st.spinner("Unrolling visual patches and triggering attention layers..."):
-                processor, trocr_model = load_trocr_brain()
+                processor, trocr_model = get_trocr_model()
                 
                 inverted_ink_canvas = cv2.bitwise_not(img_gray)
                 rgb_pil_image = Image.fromarray(cv2.cvtColor(inverted_ink_canvas, cv2.COLOR_GRAY2RGB))
